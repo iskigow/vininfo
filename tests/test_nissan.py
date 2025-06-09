@@ -5,17 +5,18 @@ def test_nissan():
 
     vin = Vin('5N1NJ01CXST000001')
 
-    assert '%s' % vin
+    assert f'{vin}'
     assert vin.wmi == '5N1'
     assert vin.manufacturer == 'Nissan'
     assert vin.vds == 'NJ01CX'
     assert vin.vis == 'ST000001'
-    assert vin.years == [1995]
+    assert vin.years_code == 'S'
+    assert vin.years == [2025, 1995]
     assert vin.region_code == '5'
     assert vin.region == 'North America'
     assert vin.country_code == '5N'
     assert vin.country == 'United States'
-    assert '%s' % vin.brand == 'Nissan (Nissan)'
+    assert f'{vin.brand}' == 'Nissan (Nissan)'
 
     details = vin.details
     assert details.model.code == 'J'

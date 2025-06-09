@@ -7,11 +7,12 @@ def test_lada():
 
     vin = Vin('XTAGFK330JY144213')
 
-    assert '%s' % vin
+    assert f'{vin}'
     assert vin.wmi == 'XTA'
     assert vin.manufacturer == 'AvtoVAZ'
     assert vin.vds == 'GFK330'
     assert vin.vis == 'JY144213'
+    assert vin.years_code == 'J'
     assert vin.years == [2018, 1988]
     assert vin.region_code == 'X'
     assert vin.region == 'Europe'
@@ -23,7 +24,7 @@ def test_lada():
         ('Region', 'Europe'),
         ('Years', '2018, 1988'),
     ])
-    assert '%s' % vin.brand == 'Lada (AvtoVAZ)'
+    assert f'{vin.brand}' == 'Lada (AvtoVAZ)'
 
     details = vin.details
     assert details.model.code == 'F'

@@ -1,20 +1,19 @@
-from datetime import datetime
-from itertools import cycle
 import re
-from typing import Optional, List
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, ClassVar
 
-from .common import Annotatable, Brand, UnsupportedBrand
-from .dicts import COUNTRIES, WMI, REGIONS
+from .common import Annotatable, Assembler, Brand, UnsupportedBrand
+from .dicts import COUNTRIES, REGIONS, WMI
 from .exceptions import ValidationError
 
-if False:  # pragma: nocover
-    from .details._base import VinDetails  # noqa
+if TYPE_CHECKING:
+    from .details._base import VinDetails
 
 
 class Vin(Annotatable):
     """Offers basic VIN data extraction facilities."""
 
-    annotate_titles = {
+    annotate_titles: ClassVar = {
         'manufacturer': 'Manufacturer',
         'region': 'Region',
         'country': 'Country',
@@ -22,20 +21,28 @@ class Vin(Annotatable):
     }
 
     def __init__(self, num: str):
+        self._brand = None
         self.num = self.validate(num)
 
-        details_extractor = self.brand.extractor
+        _details  = None
+        for brand in self.assembler.brands:
+            if isinstance(brand, str):
+                brand = Brand(brand)
+            details_extractor = brand.extractor
 
-        if details_extractor:
-            details_extractor = details_extractor(self)
+            if details_extractor:
+                _details = details_extractor(self)
+                if _details.model and _details.model.name:
+                    self._brand = brand
+                    break
 
-        self.details: VinDetails = details_extractor
+        self.details: VinDetails = _details
 
     def __str__(self):
         return self.num
 
     @classmethod
-    def validate(self, num: str) -> str:
+    def validate(cls, num: str) -> str:
         """Performs basic VIN validation and sanation.
 
         :param num:
@@ -49,7 +56,7 @@ class Vin(Annotatable):
 
         pattern = r"^[A-HJ-NPR-Z0-9]{17}$"
         if not re.match(pattern, num):
-            raise ValidationError(f"VIN number must only contain alphanumeric symbols except 'I', 'O', and 'Q' ")
+            raise ValidationError("VIN number must only contain alphanumeric symbols except 'I', 'O', and 'Q' ")
 
         return num
 
@@ -82,7 +89,7 @@ class Vin(Annotatable):
 
         check_digit = 'X' if checksum == 10 else checksum
 
-        return str(check_digit) == self.vds[5]
+        return f'{check_digit}' == self.vds[5]
 
     @property
     def wmi(self) -> str:
@@ -90,33 +97,39 @@ class Vin(Annotatable):
         return self.num[:3]
 
     @property
-    def brand(self) -> Brand:
-        """Brand object."""
+    def assembler(self) -> Assembler:
+        """Assembler object."""
 
         wmi = self.wmi
 
-        brand = WMI.get(wmi)
+        assembler = WMI.get(wmi)
 
-        if not brand:
-            brand = WMI.get(wmi[:2])
+        if not assembler:
+            assembler = WMI.get(wmi[:2])
 
-        if isinstance(brand, str):
-            brand = Brand(brand)
+        if isinstance(assembler, str):
+            assembler = Brand(assembler)
 
-        if brand is None:
-            brand = UnsupportedBrand()
+        if assembler is None:
+            assembler = UnsupportedBrand()
 
-        return brand
+        return assembler
+
+    @property
+    def brand(self) -> Brand:
+        """Brand object."""
+        brand = self._brand
+        return UnsupportedBrand() if brand is None else brand
 
     @property
     def manufacturer(self) -> str:
         """Manufacturer title."""
-        return self.brand.manufacturer
+        return self.assembler.manufacturer
 
     @property
     def manufacturer_is_small(self) -> bool:
         """A manufacturer who builds fewer than 1000 vehicles per year."""
-        return str(self.wmi[2]) == '9'
+        return f'{self.wmi[2]}' == '9'
 
     @property
     def vds(self) -> str:
@@ -133,7 +146,7 @@ class Vin(Annotatable):
         return self.wmi[0]
 
     @property
-    def region(self) -> Optional[str]:
+    def region(self) -> str | None:
         code = self.region_code
 
         title = None
@@ -150,27 +163,25 @@ class Vin(Annotatable):
         return self.wmi[0:2]
 
     @property
-    def country(self) -> Optional[str]:
+    def country(self) -> str | None:
         return COUNTRIES.get(self.country_code)
 
     @property
-    def years(self) -> List[int]:
+    def years_code(self) -> str:
+        return self.vis[0]
+
+    @property
+    def years(self) -> list[int]:
         letters = 'ABCDEFGHJKLMNPRSTVWXY123456789'
-        year_letter = self.vis[0]
-
-        year = 1979
-        year_current = datetime.now().year
-
-        result = []
-
-        for letter in cycle(letters):
-            year += 1
-
-            if letter == year_letter:
-                result.append(year)
-
-            if year == year_current:
-                break
+        overflow_delta = len(letters)
+        start_year_iso_table = 1980
+        net_year = datetime.now(tz=timezone.utc).year + 1
+        delta = letters.index(self.years_code)
+        year = delta + start_year_iso_table
+        result = [year]
+        while year + overflow_delta <= net_year:
+            year += overflow_delta
+            result.append(year)
 
         result.sort(reverse=True)
 

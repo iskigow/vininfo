@@ -1,4 +1,5 @@
-from ..brands import Lada, Nissan, Opel, Renault
+from ..assemblers import Dafra
+from ..brands import Bajaj, Lada, Nissan, Opel, Renault
 
 # NOTE:
 # if you want to extend this mapping with new WMIs, please use
@@ -275,7 +276,7 @@ WMI = {
     '8C3': 'Honda',
     '8GD': 'Peugeot',
     '8GG': 'Chevrolet',
-    '92T': 'Bajaj',
+    '92T': Bajaj(),
     '932': 'Harley-Davidson',
     '935': 'Citroën',
     '936': 'Peugeot',
@@ -290,7 +291,7 @@ WMI = {
     '94D': Nissan(),
     '953': 'VW Trucks / MAN',
     '95P': 'CAOA / Hyundai',
-    '95V': 'Dafra',
+    '95V': Dafra(),
     '96P': 'Kawasaki',
     '97N': 'Triumph',
     '988': 'Jeep',
@@ -444,7 +445,7 @@ WMI = {
     'MAT': 'Tata',
     'MBH': Nissan(),
     'MC2': 'Volvo Eicher commercial vehicles limited.',
-    'MD2': 'Bajaj',
+    'MD2': Bajaj(),
     'MDH': Nissan(),
     'MHR': 'Honda',
     'ML3': 'Mitsubishi Thailand',

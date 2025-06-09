@@ -1,14 +1,14 @@
-from typing import Optional, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from ..common import Annotatable
 
-if False:  # pragma: nocover
-    from ..toolbox import Vin  # noqa
+if TYPE_CHECKING:  # pragma: nocover
+    from ..toolbox import Vin
 
 
 class DetailWrapper:
 
-    __slots__ = ['code', 'name', '_supported']
+    __slots__ = ['_supported', 'code', 'name']
 
     def __init__(self, details: 'VinDetails', detail: 'Detail'):
         """
@@ -33,11 +33,11 @@ class DetailWrapper:
         if callable(defs):
             defs = defs(details)
 
-        self._supported = bool(source)
-        """Flag indicating that this detail extraction is available."""
-
         self.code: str = code
-        self.name: Optional[str] = defs.get(code)
+        self.name: str | None = defs.get(code)
+
+        self._supported = bool(source) or bool(self.name)
+        """Flag indicating that this detail extraction is available."""
 
     def __str__(self):
         return self.name or self.code
@@ -49,13 +49,13 @@ class DetailWrapper:
 class Detail:
     """Vin detail descriptor."""
 
-    __slots__ = ['source', 'defs']
+    __slots__ = ['defs', 'source']
 
     def __init__(self, code_source=None, definitions=None):
         self.source = code_source
         self.defs = definitions or {}
 
-    def __get__(self, instance: 'VinDetails', owner: Type['VinDetails']) -> DetailWrapper:
+    def __get__(self, instance: 'VinDetails', owner: type['VinDetails']) -> DetailWrapper:
         """
         :param instance:
         :param owner:
@@ -67,7 +67,7 @@ class Detail:
 class VinDetails(Annotatable):
     """Offers advanced (manufacturer specific) VIN data extraction ficilities."""
 
-    annotate_titles = {
+    annotate_titles: ClassVar = {
         'body': 'Body',
         'engine': 'Engine',
         'model': 'Model',

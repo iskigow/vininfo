@@ -5,17 +5,18 @@ def test_opel():
 
     vin = Vin('W0LPC6DB3CC123456')
 
-    assert '%s' % vin
+    assert f'{vin}'
     assert vin.wmi == 'W0L'
     assert vin.manufacturer == 'Opel/Vauxhall'
     assert vin.vds == 'PC6DB3'
     assert vin.vis == 'CC123456'
+    assert vin.years_code == 'C'
     assert vin.years == [2012, 1982]
     assert vin.region_code == 'W'
     assert vin.region == 'Europe'
     assert vin.country_code == 'W0'
     assert vin.country == 'Germany'
-    assert '%s' % vin.brand == 'Opel (Opel/Vauxhall)'
+    assert f'{vin.brand}' == 'Opel (Opel/Vauxhall)'
 
     details = vin.details
     assert details.model.code == 'P'
